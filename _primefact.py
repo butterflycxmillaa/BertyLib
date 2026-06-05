@@ -3,7 +3,6 @@ from sortedcontainers import SortedDict
 from _bigint import inline_division
 
 class NumberGraphNode:
-    # each node represents a number, connect a dictionary of key: prime factor, value: num / prime factor
     def __init__(self, value: str):
         if (len(value) > 1 and not value[1:].isdigit()) or not value[0].isdigit():
             raise ValueError("Value must be a string representation of a number.")
@@ -15,6 +14,13 @@ class PrimeFactorization:
     n_nodes = 0
     number_dict = SortedDict[str, int]()
     node_arr = list[NumberGraphNode]()
+    known_primes = list[str]()
+
+    def __init__(self):
+        known_primes = self.sieve_of_eratosthenes(1000000)
+        for i in range(len(known_primes)):
+            if known_primes[i]:
+                self.known_primes.append(str(i))
 
     @staticmethod
     def sieve_of_eratosthenes(n: int) -> list[bool]:
@@ -28,7 +34,6 @@ class PrimeFactorization:
 
     def is_num_present(cls, num: str) -> bool:
         return num in cls.number_dict
-    
 
     # returns the index of the node representing the number
     # if it doesn't exist, it creates a new node and returns its index
@@ -46,8 +51,8 @@ class PrimeFactorization:
                 return -1
 
 if __name__ == '__main__':
-    primes_100 = PrimeFactorization.sieve_of_eratosthenes(1000000)
+    pf = PrimeFactorization()
     count = 0
-    for i in range(len(primes_100)):
-        if(primes_100[i]): count += 1
-    print(count / 10000)
+    for prime in pf.known_primes:
+        count += 1
+    print(count)
