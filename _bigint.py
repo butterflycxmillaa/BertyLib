@@ -1,5 +1,6 @@
-def inline_division(N: str, D: str) -> str:
+def inline_division(N: str, D: str) -> tuple[str, bool]:
     res = ""
+    is_divisible = True
     N = N.lstrip('0') or '0'
     D = D.lstrip('0') or '0'
     int_N = int(N)
@@ -16,7 +17,10 @@ def inline_division(N: str, D: str) -> str:
         qp = np // int_D
         res += str(qp)
         np = np % int_D
-    return res.lstrip('0') or '0'
+    if np != 0:
+        is_divisible = False
+    res = res.lstrip('0') or '0'
+    return (res, is_divisible)
 
 if __name__ == '__main__':
     while True:
