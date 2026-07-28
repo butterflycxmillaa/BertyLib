@@ -3,40 +3,39 @@ from sortedcontainers import SortedDict
 from _bigint import inline_division
 
 class NumberGraphNode:
-    def __init__(self, value: str):
-        if (len(value) > 1 and not value[1:].isdigit()) or not value[0].isdigit():
-            raise ValueError("Value must be a string representation of a number.")
-        if int(value) <= 1:
-            raise ValueError("Value must be greater than 1.")
+    def __init__(self, value: int):
         self.value = value
 
 def sieve_of_eratosthenes(n: int) -> list[bool]:
-    is_prime = [True] * (n + 1)
-    is_prime[0] = is_prime[1] = False
-    for i in range(2, int(n ** 0.5) + 1):
-        if is_prime[i]:
-            for j in range(i * 2, n + 1, i):
-                is_prime[j] = False
+    # Returns a list is_prime where is_prime[i] shows whether (i + 1) <is prime
+    is_prime = [True] * n
+    for num in range(2, int(n ** 0.5) + 1):
+        if is_prime[num - 1]:
+            # iterate over all the multiples of num
+            for mul in range(num * 2, n + 1, num):
+                is_prime[mul - 1] = False
     return is_prime
 
 prime_map = sieve_of_eratosthenes(1000000)
-known_primes = list[str]()
-number_dict = SortedDict[str, int]()
+known_primes = list[int]()
+number_dict = SortedDict[int, int]()
 node_arr = list[NumberGraphNode]()
 n_nodes = 0
-for i in range(len(prime_map)):
+for i in range(1, len(prime_map)):
     if prime_map[i]:
-        known_primes.append(str(i))
+        known_primes.append(i + 1)
+        print(i + 1, end = " ")
+print()
 
-def is_num_present(num: str) -> bool:
+def is_num_present(num: int) -> bool:
     return num in number_dict
 
-def return_num_index(num: str) -> int:
+def return_num_index(num: int) -> int:
     return number_dict[num] if is_num_present(num) else -1
 
 # returns the index of the node representing the number
 # if it doesn't exist, it creates a new node and returns its index
-def insert_num(num: str) -> int:
+def insert_num(num: int) -> int:
     if is_num_present(num):
         return number_dict[num]
     else:
@@ -48,28 +47,24 @@ def insert_num(num: str) -> int:
         except ValueError as e:
             print(f"Invalid number: {num}. {e.args[0]}")
             return -1
-      
-def find_known_factors(num: str) -> list[str]:
-    res = list[str]()
-    return find_known_factors_aux(num, res, 0)
-
-def find_known_factors_aux(num: str, res: list[str], threshold_min_ind: int) -> list[str]:
-    if num == "1": return list[str]
+  
+def find_known_factors(num: int) -> list[int]:
+    # factorizes using the known primes and returns a list of the factors found
+    res = list[int]()
+    # defines the already explored known primes
+    min_ind = 0
+    while num not in known_primes and num != 1 and min_ind < len(known_primes):
+        # check if it's divisible by the first available prime
+        prime = known_primes[min_ind]
+        result = inline_division(num, prime)
+        if result[1]:
+            # if num is divisible by prime, add prime to list and pick the result
+            res.append(prime)
+            num = result[0]
+        else:
+            # num is not divisible by prime -> none of its divisors will be divisible by prime
+            min_ind += 1
     if num in known_primes:
-        res.append(num)
-        return res
-    threshold_max = int(int(num) ** 0.5) + 1
-    for known_prime in known_primes[threshold_min_ind::]:
-        if int(known_prime) <= threshold_max:
-            result = inline_division(num, known_prime)
-            print(f"{num} / {known_prime} = {result[0]}, full division: {result[1]}")
-            if result[1]:
-                res.append(known_prime)
-                return find_known_factors_aux(result[0], res, threshold_min_ind)
-            else:
-                threshold_min_ind += 1
-        else: break
-    if num != "1":
         res.append(num)
     return res
 
@@ -77,13 +72,9 @@ if __name__ == '__main__':
     num = -1
     try:
         num = input("Insert a number: ")
-        if len(num) > 7:
-            print("Number is too long")
-        else:
-            num = int(num)
-            num = str(num)
-            for prime in find_known_factors(num):
-                print(prime, end = " ")
-            print()
-    except ValueError:
-        print("Number is not valid")
+        num = int(num)
+        for prime in find_known_factors(num):
+            print(prime, end = " ")
+        print()
+    except ValueError as e:
+        print(f"Error: {e.args[0]}")

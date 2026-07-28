@@ -1,26 +1,45 @@
-def inline_division(N: str, D: str) -> tuple[str, bool]:
+def inline_division(N: int, D: int) -> tuple[int, bool]:
     res = ""
     is_divisible = True
-    N = N.lstrip('0') or '0'
-    D = D.lstrip('0') or '0'
-    int_N = int(N)
-    int_D = int(D)
-    if D == '0':
-        return "INF"
-    if int_N < int_D:
-        return "0"
-    if int_N == int_D:
-        return "1"
+    if D == 0:
+        raise ValueError("Cannot divide by zero.")
+    if N < D:
+        return 0
+    if N == D:
+        return 1
     np = 0
-    for dig in N:
+    for dig in str(N):
         np = np * 10 + int(dig)
-        qp = np // int_D
+        qp = np // D
         res += str(qp)
-        np = np % int_D
+        np = np % D
     if np != 0:
         is_divisible = False
-    res = res.lstrip('0') or '0'
-    return (res, is_divisible)
+    return (int(res), is_divisible)
+
+def big_exp_mod_N_aux(base: int, exp: int, mod: int) -> int:
+    if exp == 1:
+        return base % mod
+    if exp == 0:
+        return 1
+    if exp % 2 == 0:
+        half = big_exp_mod_N_aux(base, exp // 2, mod)
+        return (half * half) % mod
+    else:
+        return (base * big_exp_mod_N_aux(base, exp - 1, mod)) % mod
+
+def big_exp_mod_N(A: int, B: int, N: int) -> int:
+    if N == 0:
+        raise ValueError("Cannot perform mod operation with divisor 0.")
+    if N == 1:
+        return 0
+    if A == 0 and B == 0:
+        raise ValueError("0^0 is undefined.")
+    if A == 0:
+        return 0
+    if B == 0:
+        return 1
+    return big_exp_mod_N_aux(A, B, N)
 
 if __name__ == '__main__':
     while True:
@@ -31,8 +50,6 @@ if __name__ == '__main__':
             D = int(input("Insert the denominator: (0 to quit) "))
             if D == 0:
                 break
-            N = str(N)
-            D = str(D)
             print(inline_division(N, D))
         except ValueError:
             print("Insert a valid number")
