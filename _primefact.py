@@ -85,12 +85,30 @@ def miller_rabin_primality(num: int) -> bool:
         return True
     return False
 
+def euclidean_gcd_algorithm(A: int, B: int) -> int:
+    # swap A and B so that A >= B
+    if B > A:
+        tmp = A
+        A = B
+        B = tmp
+    result = inline_division(A, B)
+    # result[0] = A / B
+    # result[1] = A % B
+    while result[1] != 0:
+        A = B
+        B = result[1]
+        result = inline_division(A, B)
+    return B
+
 if __name__ == '__main__':
     num = -1
     try:
-        num = input("Insert a number: ")
-        num = int(num)
-        print(find_known_factors(num))
-        print(miller_rabin_primality(num))
+        num1 = input("Insert a number: ")
+        num1 = int(num1)
+        num2 = input("Insert a number: ")
+        num2 = int(num2)
+        print(num1, find_known_factors(num1))
+        print(num2, find_known_factors(num2))
+        print(euclidean_gcd_algorithm(num1, num2))
     except ValueError as e:
         print(f"Error: {e.args[0]}")

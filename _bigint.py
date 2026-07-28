@@ -5,9 +5,9 @@ def inline_division(N: int, D: int) -> tuple[int, int]:
     if D == 0:
         raise ValueError("Cannot divide by zero.")
     if N < D:
-        return 0
+        return (0, N)
     if N == D:
-        return 1
+        return (1, 0)
     np = 0
     for dig in str(N):
         np = np * 10 + int(dig)
