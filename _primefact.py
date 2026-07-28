@@ -1,6 +1,6 @@
 from sortedcontainers import SortedDict
 
-from _bigint import inline_division
+from _bigint import inline_division, big_exp_mod_N
 
 class NumberGraphNode:
     def __init__(self, value: int):
@@ -16,7 +16,7 @@ def sieve_of_eratosthenes(n: int) -> list[bool]:
                 is_prime[mul - 1] = False
     return is_prime
 
-prime_map = sieve_of_eratosthenes(1000000)
+prime_map = sieve_of_eratosthenes(1000)
 known_primes = list[int]()
 number_dict = SortedDict[int, int]()
 node_arr = list[NumberGraphNode]()
@@ -68,13 +68,28 @@ def find_known_factors(num: int) -> list[int]:
         res.append(num)
     return res
 
+def miller_rabin_primality(num: int) -> bool:
+    exp = num - 1
+    final = big_exp_mod_N(100, exp, num)
+    if final == 1:
+        while exp % 2 == 0:
+            exp /= 2
+            # perform the big exp calculation once again
+            new = big_exp_mod_N(100, exp, num)
+            if final == 1:
+                if new == 1 or new == num - 1:
+                    final = new
+                    continue
+                return False
+        return True
+    return False
+
 if __name__ == '__main__':
     num = -1
     try:
         num = input("Insert a number: ")
         num = int(num)
-        for prime in find_known_factors(num):
-            print(prime, end = " ")
-        print()
+        print(find_known_factors(num))
+        print(miller_rabin_primality(num))
     except ValueError as e:
         print(f"Error: {e.args[0]}")
