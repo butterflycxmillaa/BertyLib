@@ -70,12 +70,13 @@ def find_known_factors(num: int) -> list[int]:
 
 def miller_rabin_primality(num: int) -> bool:
     exp = num - 1
-    final = big_exp_mod_N(100, exp, num)
+    A = 100
+    final = big_exp_mod_N(A, exp, num)
     if final == 1:
         while exp % 2 == 0:
             exp /= 2
             # perform the big exp calculation once again
-            new = big_exp_mod_N(100, exp, num)
+            new = big_exp_mod_N(A, exp, num)
             if final == 1:
                 if new == 1 or new == num - 1:
                     final = new
