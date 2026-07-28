@@ -24,8 +24,8 @@ n_nodes = 0
 for i in range(1, len(prime_map)):
     if prime_map[i]:
         known_primes.append(i + 1)
-#         print(i + 1, end = " ")
-# print()
+        print(i + 1, end = " ")
+print()
 
 def is_num_present(num: int) -> bool:
     return num in number_dict
@@ -87,10 +87,12 @@ def miller_rabin_primality(num: int) -> bool:
 
 def euclidean_gcd_algorithm(A: int, B: int) -> int:
     # swap A and B so that A >= B
+    if A == 0:
+        return B
+    if B == 0:
+        return A
     if B > A:
-        tmp = A
-        A = B
-        B = tmp
+        A, B = B, A
     result = inline_division(A, B)
     # result[0] = A / B
     # result[1] = A % B
@@ -100,15 +102,35 @@ def euclidean_gcd_algorithm(A: int, B: int) -> int:
         result = inline_division(A, B)
     return B
 
+def pollard_rho(num: int) -> int:
+    # won't work if num is prime
+    # instead it will enter an infinite loop (fix needed)
+    if num % 2 == 0:
+        return 2
+    while True:
+        c = 1
+        x0 = 2
+        def apply_polinomial(x: int):
+            return (x ** 2 + c) % num
+        # sets tortoise and hare pointers
+        T = H = x0
+        while True:
+            # execute the iteration
+            T = apply_polinomial(T)
+            H = apply_polinomial(apply_polinomial(H))
+            gcd = euclidean_gcd_algorithm(abs(T - H), num)
+            if 1 < gcd < num:
+                return gcd
+            if gcd == num:
+                break
+        c += 1
+
 if __name__ == '__main__':
     num = -1
     try:
-        num1 = input("Insert a number: ")
-        num1 = int(num1)
-        num2 = input("Insert a number: ")
-        num2 = int(num2)
-        print(num1, find_known_factors(num1))
-        print(num2, find_known_factors(num2))
-        print(euclidean_gcd_algorithm(num1, num2))
+        num = input("Insert a number: ")
+        num = int(num)
+        print(num, find_known_factors(num))
+        print(pollard_rho(num))
     except ValueError as e:
         print(f"Error: {e.args[0]}")

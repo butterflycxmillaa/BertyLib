@@ -3,7 +3,7 @@ def inline_division(N: int, D: int) -> tuple[int, int]:
     res = ""
     is_divisible = 0
     if D == 0:
-        raise ValueError("Cannot divide by zero.")
+        raise ArithmeticError("Cannot divide by zero.")
     if N < D:
         return (0, N)
     if N == D:
