@@ -1,6 +1,7 @@
-def inline_division(N: int, D: int) -> tuple[int, bool]:
+def inline_division(N: int, D: int) -> tuple[int, int]:
+    # return integer result + remainder
     res = ""
-    is_divisible = True
+    is_divisible = 0
     if D == 0:
         raise ValueError("Cannot divide by zero.")
     if N < D:
@@ -13,9 +14,7 @@ def inline_division(N: int, D: int) -> tuple[int, bool]:
         qp = np // D
         res += str(qp)
         np = np % D
-    if np != 0:
-        is_divisible = False
-    return (int(res), is_divisible)
+    return (int(res), np)
 
 def big_exp_mod_N_aux(base: int, exp: int, mod: int) -> int:
     if exp == 1:

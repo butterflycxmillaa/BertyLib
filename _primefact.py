@@ -24,8 +24,8 @@ n_nodes = 0
 for i in range(1, len(prime_map)):
     if prime_map[i]:
         known_primes.append(i + 1)
-        print(i + 1, end = " ")
-print()
+#         print(i + 1, end = " ")
+# print()
 
 def is_num_present(num: int) -> bool:
     return num in number_dict
@@ -57,7 +57,7 @@ def find_known_factors(num: int) -> list[int]:
         # check if it's divisible by the first available prime
         prime = known_primes[min_ind]
         result = inline_division(num, prime)
-        if result[1]:
+        if result[1] == 0:
             # if num is divisible by prime, add prime to list and pick the result
             res.append(prime)
             num = result[0]
