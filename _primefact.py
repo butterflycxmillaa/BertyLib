@@ -1,6 +1,6 @@
 from sortedcontainers import SortedDict
 
-from _bigint import inline_division, big_exp_mod_N
+from _bigint import big_exp_mod_N
 
 class NumberGraphNode:
     def __init__(self, value: int):
@@ -56,7 +56,7 @@ def find_known_factors(num: int) -> list[int]:
     while num not in known_primes and num != 1 and min_ind < len(known_primes):
         # check if it's divisible by the first available prime
         prime = known_primes[min_ind]
-        result = inline_division(num, prime)
+        result = (num // prime, num % prime)
         if result[1] == 0:
             # if num is divisible by prime, add prime to list and pick the result
             res.append(prime)
@@ -93,13 +93,11 @@ def euclidean_gcd_algorithm(A: int, B: int) -> int:
         return A
     if B > A:
         A, B = B, A
-    result = inline_division(A, B)
-    # result[0] = A / B
-    # result[1] = A % B
+    result = (A // B, A % B)
     while result[1] != 0:
         A = B
         B = result[1]
-        result = inline_division(A, B)
+        result = (A // B, A % B)
     return B
 
 def pollard_rho(num: int) -> int:
