@@ -1,5 +1,5 @@
+import math
 from sortedcontainers import SortedDict
-
 from _bigint import big_exp_mod_N
 
 class NumberGraphNode:
@@ -16,7 +16,22 @@ def sieve_of_eratosthenes(n: int) -> list[bool]:
                 is_prime[mul - 1] = False
     return is_prime
 
-prime_map = sieve_of_eratosthenes(1000)
+def segmented_soe(kp: list[int], L: int) -> list[int]:
+    M = kp[-1] + 1
+    if L < M: return []
+    # candidates[0] points to M
+    # candidates[-1] points to L
+    dim = L - M + 1
+    candidates = [True] * dim
+    max_p = math.isqrt(L)
+    kp_segm = [p for p in kp if p <= max_p]
+    for p in kp_segm:
+        start = max((M + p - 1) // p * p, p ** 2)
+        for i in range(start - M, dim, p):
+            candidates[i] = False
+    return [M + i for i in range(dim) if candidates[i]]
+
+prime_map = sieve_of_eratosthenes(1_000_000)
 known_primes = list[int]()
 number_dict = SortedDict[int, int]()
 node_arr = list[NumberGraphNode]()
@@ -25,6 +40,9 @@ for i in range(1, len(prime_map)):
     if prime_map[i]:
         known_primes.append(i + 1)
         print(i + 1, end = " ")
+more_primes = segmented_soe(known_primes, 11_000_000)
+for p in more_primes:
+    print(p, end = " ")
 print()
 
 def is_num_present(num: int) -> bool:
@@ -128,7 +146,6 @@ if __name__ == '__main__':
     try:
         num = input("Insert a number: ")
         num = int(num)
-        print(num, find_known_factors(num))
-        print(pollard_rho(num))
+        print(miller_rabin_primality(num))
     except ValueError as e:
         print(f"Error: {e.args[0]}")
