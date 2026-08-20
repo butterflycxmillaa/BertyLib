@@ -103,23 +103,18 @@ def block_lanczos_kernel(A_rows, n, block_size=8, seed=None):
     b = min(block_size, n)
     rnd = random.Random(seed)
     max_iters = 10 * (n // b + 5)
- 
     V_prev = [0] * b
     V_curr = [rnd.getrandbits(n) for _ in range(b)]
     Tinv_prev = None
- 
     krylov_vectors = []
     deflations = []
     expansions = 0
- 
     for it in range(1, max_iters + 1):
         if all(v == 0 for v in V_curr):
             break
- 
         U = block_mat_vec(A_rows, V_curr, n)
         T = block_inner(V_curr, U)
         Tinv = invert_gf2_square(T, b)
- 
         if Tinv is None:
             for z in gf2_rref_kernel(T, b):
                 cand = 0
@@ -132,26 +127,21 @@ def block_lanczos_kernel(A_rows, n, block_size=8, seed=None):
             V_prev = [0] * b
             Tinv_prev = None
             continue
- 
         krylov_vectors.extend(V_curr)
         expansions += 1
- 
         W = block_mat_vec(A_rows, U, n)
         X = block_inner(V_curr, W)
         C = gf2_matmul_square(Tinv, X, b)
- 
         if Tinv_prev is not None:
             Y = block_inner(V_prev, W)
             D = gf2_matmul_square(Tinv_prev, Y, b)
             VprevD = block_right_mult(V_prev, D, b)
         else:
             VprevD = [0] * b
- 
         VcurrC = block_right_mult(V_curr, C, b)
         V_next = [U[k] ^ VcurrC[k] ^ VprevD[k] for k in range(b)]
         V_prev, V_curr = V_curr, V_next
         Tinv_prev = Tinv
- 
     Av_rows = [mat_vec_gf2(A_rows, v, n) for v in krylov_vectors]
     m = len(Av_rows)
     track = [1 << i for i in range(m)]
@@ -170,7 +160,6 @@ def block_lanczos_kernel(A_rows, n, block_size=8, seed=None):
         pr += 1
         if pr == m:
             break
- 
     kernel_vectors = list(deflations)
     for r in range(m):
         if M[r] == 0:
@@ -180,11 +169,9 @@ def block_lanczos_kernel(A_rows, n, block_size=8, seed=None):
                     v ^= krylov_vectors[k]
             if v != 0 and mat_vec_gf2(A_rows, v, n) == 0:
                 kernel_vectors.append(v)
- 
     return reduce_to_basis(kernel_vectors)
  
- 
-def find_row_dependencies(M_rows, n_cols, block_size=8, seed=None):
+def find_row_dependencies(M_rows, block_size=8, seed=None):
     m = len(M_rows)
     A_rows = [0] * m
     for i in range(m):
@@ -193,9 +180,7 @@ def find_row_dependencies(M_rows, n_cols, block_size=8, seed=None):
             if popcount(M_rows[i] & M_rows[j]) & 1:
                 row |= (1 << j)
         A_rows[i] = row
- 
-    candidates = block_lanczos_kernel(A_rows, m, block_size=block_size, seed=seed, verbose=verbose)
- 
+    candidates = block_lanczos_kernel(A_rows, m, block_size=block_size, seed=seed)
     dependencies = []
     for v in candidates:
         combo = [i for i in range(m) if (v >> i) & 1]

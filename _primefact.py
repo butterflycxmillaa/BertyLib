@@ -1,6 +1,6 @@
 import math
-from sortedcontainers import SortedDict
 from _bigint import big_exp_mod_N
+from _block_lanczos import find_row_dependencies
 
 known_primes = []
 upper_lim = 0
@@ -43,9 +43,9 @@ def set_upper_lim_kp(lim: int) -> list[int]:
     return known_primes
 
 kp = set_upper_lim_kp(1_000_000)
-for p in kp:
-    print(p, end = " ")
-print()
+# for p in kp:
+#     print(p, end = " ")
+# print()
 
 def find_known_factors(num: int) -> list[int]:
     # factorizes using the known primes and returns a list of the factors found
@@ -151,27 +151,22 @@ def expand_N_primes(kp: list[int], N: int) -> list[int]:
 
 def compute_qs_params(num: int) -> tuple[int, int]:
     # computes the length of the optimal factor base
-    ln_num = math.log(num)
-    ln_ln_num = math.log(ln_num)
-    c = 1 / math.sqrt(2)
-    ln_B = c * math.sqrt(ln_num * ln_ln_num)
-    B = math.exp(ln_B)
-    k = int((B / math.log(B)) / 2)
     digits = len(str(num))
-    if digits <= 30:
-        optimal_k = int(300 + (digits / 30) ** 2 * 200)
+    if digits < 10:
+        optimal_k = 2 + 1.2 * (digits ** 1.4)
+    elif digits <= 30:
+        optimal_k = 35 + ((digits - 10) / 20) ** 2 * 265
     elif digits <= 60:
-        optimal_k = int(500 + ((digits - 30) / 30) ** 2.2 * 8500)
+        optimal_k = 300 + ((digits - 30) / 30) ** 2.2 * 8700
     elif digits <= 90:
-        optimal_k = int(9000 + ((digits - 60) / 30) ** 2.4 * 250000)
+        optimal_k = 9000 + ((digits - 60) / 30) ** 2.4 * 251000
     else:
-        optimal_k = int(260000 + ((digits - 90) / 10) ** 2.5 * 740000)
+        optimal_k = 260000 + ((digits - 90) / 10) ** 2.5 * 740000
+    optimal_k = int(optimal_k)
     if digits >= 40:
         optimal_k = int(optimal_k * 0.65)
-    optimal_B = int(2 * optimal_k * math.log(max(optimal_k, 2)))
-    # the first k is the ideal one
-    # the second k is the one used in practice
-    # same goes for B
+    optimal_k = max(optimal_k, 5)
+    optimal_B = int(2 * optimal_k * math.log(max(2 * optimal_k, 2)))
     return (optimal_k, optimal_B)
 
 def legendre_symbol(num: int, p: int) -> bool:
@@ -182,7 +177,7 @@ def generate_factor_base(num: int, k: int, B: int):
 
     if upper_lim < B:
         set_upper_lim_kp(B)
-    factor_base = [-1]
+    factor_base = []
     for p in known_primes:
         if len(factor_base) - 1 >= k:
             break
@@ -213,13 +208,53 @@ def perform_sieving(qx: int, fb: int) -> list[int]:
     if qx == 1: return res
     else: return [-1] * k
 
+def quadratic_sieve(num: int) -> int:
+    k, B = compute_qs_params(num)
+    fb = generate_factor_base(num, k, B)
+    len_fb = len(fb)
+    x = math.isqrt(num) + 1
+    x_arr = [-1] * (len_fb + 1)
+    qx_arr = [-1] * (len_fb + 1)
+    fact = [0] * (len_fb + 1)
+    idx = 0
+    while idx < len_fb + 1:
+        qx = (x ** 2 - num)
+        sieve = perform_sieving(qx, fb)
+        if sieve[0] == -1:
+            # the Q(x) is not a B-smooth value, therefore x should be discarded
+            x += 1
+            continue
+        # Q(x) here is guaranteed to be B-smooth, so it should be added to the matrix
+        x_arr[idx] = x
+        qx_arr[idx] = qx
+        exp_arr_mod_2 = [exp % 2 for exp in sieve]
+        for pos, exp in enumerate(exp_arr_mod_2[::-1]):
+            fact[idx] += (1 << pos) * exp
+        x += 1
+        idx += 1
+    deps = find_row_dependencies(fact, 64)
+    for dep in deps:
+        # compute values of X and Y
+        X = 1
+        Y = 1
+        for elem in dep:
+            X *= x_arr[elem]
+            Y *= qx_arr[elem]
+        X %= num
+        Y = math.sqrt(Y)
+        g = euclidean_gcd_algorithm(X - Y, num)
+        if g == 1 or g == num: continue
+        return int(g)
+
 if __name__ == '__main__':
+    import sys
     num = -1
     try:
-        fb = sieve_of_eratosthenes(100)
-        sieve = perform_sieving(278, fb)
-        if sieve:
-            for idx, exp in enumerate(sieve):
-                print(f"{fb[idx]}: {exp}")
+        num = 1649
+        # num = 457892576
+        # num = 17589302458768765432134567897654321343453246534543423
+        val = quadratic_sieve(num)
+        print(val)
+        print(num / val)
     except ValueError as e:
         print(f"Error: {e.args[0]}")
