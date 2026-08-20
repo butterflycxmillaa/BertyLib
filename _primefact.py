@@ -201,10 +201,25 @@ def generate_factor_base(num: int, k: int, B: int):
                 factor_base.append(p)
     return factor_base
 
+def perform_sieving(qx: int, fb: int) -> list[int]:
+    # tries to divide qx by all the factors inside of the factor base
+    # if qx is not fb-smooth, then returns list [-1] * k
+    k = len(fb)
+    res = [0] * k
+    for factor_n, factor in enumerate(fb):
+        while qx % factor == 0:
+            res[factor_n] += 1
+            qx //= factor
+    if qx == 1: return res
+    else: return [-1] * k
+
 if __name__ == '__main__':
     num = -1
     try:
-        num = int(input("Insert a number: "))
-        print(miller_rabin_primality(num))
+        fb = sieve_of_eratosthenes(100)
+        sieve = perform_sieving(278, fb)
+        if sieve:
+            for idx, exp in enumerate(sieve):
+                print(f"{fb[idx]}: {exp}")
     except ValueError as e:
         print(f"Error: {e.args[0]}")
