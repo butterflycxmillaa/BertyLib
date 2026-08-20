@@ -42,7 +42,7 @@ def set_upper_lim_kp(lim: int) -> list[int]:
     upper_lim = lim
     return known_primes
 
-kp = set_upper_lim_kp(10_000_000)
+kp = set_upper_lim_kp(1_000_000)
 for p in kp:
     print(p, end = " ")
 print()
@@ -73,7 +73,7 @@ def miller_rabin_primality(num: int) -> bool:
     final = big_exp_mod_N(A, exp, num)
     if final == 1:
         while exp % 2 == 0:
-            exp /= 2
+            exp //= 2
             # perform the big exp calculation once again
             new = big_exp_mod_N(A, exp, num)
             if final == 1:
@@ -153,7 +153,7 @@ def compute_qs_params(num: int) -> tuple[int, int]:
     # computes the length of the optimal factor base
     ln_num = math.log(num)
     ln_ln_num = math.log(ln_num)
-    c = 1 / math.isqrt(2)
+    c = 1 / math.sqrt(2)
     ln_B = c * math.sqrt(ln_num * ln_ln_num)
     B = math.exp(ln_B)
     k = int((B / math.log(B)) / 2)
@@ -167,21 +167,44 @@ def compute_qs_params(num: int) -> tuple[int, int]:
     else:
         optimal_k = int(260000 + ((digits - 90) / 10) ** 2.5 * 740000)
     if digits >= 40:
-        optimal_k = int(k * 0.65)
+        optimal_k = int(optimal_k * 0.65)
     optimal_B = int(2 * optimal_k * math.log(max(optimal_k, 2)))
     # the first k is the ideal one
     # the second k is the one used in practice
     # same goes for B
-    return (k, optimal_k, B, optimal_B)
+    return (optimal_k, optimal_B)
 
 def legendre_symbol(num: int, p: int) -> bool:
-    return pow(num, (p - 1) // 2, p) == 1
+    return p == 2 or pow(num, (p - 1) // 2, p) == 1
+
+def generate_factor_base(num: int, k: int, B: int):
+    global known_primes, upper_lim
+
+    if upper_lim < B:
+        set_upper_lim_kp(B)
+    factor_base = [-1]
+    for p in known_primes:
+        if len(factor_base) - 1 >= k:
+            break
+        if legendre_symbol(num, p):
+            factor_base.append(p)
+    current_lim = upper_lim
+    while len(factor_base) - 1 < k:
+        current_lim *= 2
+        set_upper_lim_kp(current_lim)
+        for p in known_primes:
+            if p <= known_primes[len(factor_base) - 1]:
+                continue
+            if len(factor_base) - 1 >= k:
+                break
+            if legendre_symbol(num, p):
+                factor_base.append(p)
+    return factor_base
 
 if __name__ == '__main__':
     num = -1
     try:
-        kp = generate_N_primes(10)
-        print(kp)
-        print(expand_N_primes(kp, 20))
+        num = int(input("Insert a number: "))
+        print(miller_rabin_primality(num))
     except ValueError as e:
         print(f"Error: {e.args[0]}")
