@@ -46,7 +46,7 @@ kp = set_upper_lim_kp(10_000_000)
 for p in kp:
     print(p, end = " ")
 print()
-  
+
 def find_known_factors(num: int) -> list[int]:
     # factorizes using the known primes and returns a list of the factors found
     res = list[int]()
@@ -121,6 +121,34 @@ def pollard_rho(num: int) -> int:
             if gcd == num:
                 break
         c += 1
+
+def compute_qs_params(num: int) -> tuple[int, int]:
+    # computes the length of the optimal factor base
+    ln_num = math.log(num)
+    ln_ln_num = math.log(ln_num)
+    c = 1 / math.isqrt(2)
+    ln_B = c * math.sqrt(ln_num * ln_ln_num)
+    B = math.exp(ln_B)
+    k = int((B / math.log(B)) / 2)
+    digits = len(str(num))
+    if digits <= 30:
+        optimal_k = int(300 + (digits / 30) ** 2 * 200)
+    elif digits <= 60:
+        optimal_k = int(500 + ((digits - 30) / 30) ** 2.2 * 8500)
+    elif digits <= 90:
+        optimal_k = int(9000 + ((digits - 60) / 30) ** 2.4 * 250000)
+    else:
+        optimal_k = int(260000 + ((digits - 90) / 10) ** 2.5 * 740000)
+    if digits >= 40:
+        optimal_k = int(k * 0.65)
+    optimal_B = int(2 * optimal_k * math.log(max(optimal_k, 2)))
+    # the first k is the ideal one
+    # the second k is the one used in practice
+    # same goes for B
+    return (k, optimal_k, B, optimal_B)
+
+def legendre_symbol(num: int, p: int) -> bool:
+    return pow(num, (p - 1) // 2, p) == 1
 
 if __name__ == '__main__':
     num = -1
