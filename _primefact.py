@@ -122,6 +122,33 @@ def pollard_rho(num: int) -> int:
                 break
         c += 1
 
+def generate_N_primes(N: int) -> list[int]:
+    primes = [2]
+    if N <= 0: return []
+    if N == 1: return primes
+    idx = 0
+    num = 3
+    while idx < N - 1:
+        if miller_rabin_primality(num):
+            primes.append(num)
+            idx += 1
+        num += 2
+    return primes
+
+def expand_N_primes(kp: list[int], N: int) -> list[int]:
+    len_kp = len(kp)
+    if N <= len_kp:
+        return kp[:N]
+    last_prime = kp[-1] + 2
+    n_primes = N - len_kp
+    idx = 0
+    while idx < n_primes:
+        if miller_rabin_primality(last_prime):
+            kp.append(last_prime)
+            idx += 1
+        last_prime += 2
+    return kp
+
 def compute_qs_params(num: int) -> tuple[int, int]:
     # computes the length of the optimal factor base
     ln_num = math.log(num)
@@ -153,8 +180,8 @@ def legendre_symbol(num: int, p: int) -> bool:
 if __name__ == '__main__':
     num = -1
     try:
-        num = input("Insert a number: ")
-        num = int(num)
-        print(miller_rabin_primality(num))
+        kp = generate_N_primes(10)
+        print(kp)
+        print(expand_N_primes(kp, 20))
     except ValueError as e:
         print(f"Error: {e.args[0]}")
