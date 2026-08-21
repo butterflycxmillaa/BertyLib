@@ -250,10 +250,59 @@ def quadratic_sieve(num: int) -> int:
         g = euclidean_gcd_algorithm(X - Y, num)
         if g == 1 or abs(g) == num: continue
         return int(g)
-    
+
+def factorize_num_aux(num: int, factors: list[int]) -> None:
+    global upper_lim
+
+    if miller_rabin_primality(num):
+        factors.append(num)
+        return
+    if num < upper_lim:
+        kfs = find_known_factors(num)
+        factors += kfs
+        return
+    g = 1
+    try:
+        g = pollard_rho(num)
+    except tlee:
+        g = quadratic_sieve(num) 
+    finally:
+        # g is a factor of num, so factorize both g and num // g
+        factorize_num_aux(g, factors)
+        factorize_num_aux(num // g, factors)
+    return
+
+def factorize_num(num: int) -> SortedDict[int, int]:
+    res = SortedDict[int, int]()
+    if num == 0:
+        res[0] = 1
+        return res
+    else:
+        res[0] = 0
+    if num < 0:
+        res[-1] = 1
+        num *= -1
+    elif num > 0:
+        res[-1] = 0
+    if num == 1:
+        return res
+    factors = []
+    factorize_num_aux(num, factors)
+    for f in factors:
+        if f not in res.keys():
+            res[f] = 0
+        res[f] += 1
+    return res
+
 if __name__ == '__main__':
     num = -1
     try:
-        print("Hello World!")
+        num = 465782945632
+        print(f"{num} =", end = " ")
+        res = factorize_num(num)
+        for idx, fact in enumerate(res.keys()):
+            if fact > 0:
+                print(f"({fact} ^ {res[fact]}){' *' if fact != res.keys()[-1] else ''}", end = " ")
+        print()
     except ValueError as e:
         print(f"Error: {e.args[0]}")

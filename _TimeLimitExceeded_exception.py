@@ -1,0 +1,2 @@
+class TimeLimitExceededError(Exception):
+    pass
