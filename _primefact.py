@@ -246,10 +246,11 @@ def quadratic_sieve(num: int) -> int:
             X *= x_arr[elem]
             Y *= qx_arr[elem]
         X %= num
-        Y = math.sqrt(Y)
+        Y = math.isqrt(Y)
         g = euclidean_gcd_algorithm(X - Y, num)
-        if g == 1 or abs(g) == num: continue
+        if g == 1 or g == num: continue
         return int(g)
+    return 1
 
 def factorize_num_aux(num: int, factors: list[int]) -> None:
     global upper_lim
@@ -298,8 +299,8 @@ if __name__ == '__main__':
     num = -1
     try:
         num = 465782945632
-        print(f"{num} =", end = " ")
         res = factorize_num(num)
+        print(f"{num} =", end = " ")
         for idx, fact in enumerate(res.keys()):
             if fact > 0:
                 print(f"({fact} ^ {res[fact]}){' *' if fact != res.keys()[-1] else ''}", end = " ")
