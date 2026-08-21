@@ -1,6 +1,9 @@
 import math
 from _bigint import big_exp_mod_N
 from _block_lanczos import find_row_dependencies
+from sortedcontainers import SortedDict
+
+from _TimeLimitExceeded_exception import TimeLimitExceededError as tlee
 
 known_primes = []
 upper_lim = 0
@@ -43,9 +46,6 @@ def set_upper_lim_kp(lim: int) -> list[int]:
     return known_primes
 
 kp = set_upper_lim_kp(1_000_000)
-# for p in kp:
-#     print(p, end = " ")
-# print()
 
 def find_known_factors(num: int) -> list[int]:
     # factorizes using the known primes and returns a list of the factors found
@@ -101,19 +101,20 @@ def euclidean_gcd_algorithm(A: int, B: int) -> int:
         result = (A // B, A % B)
     return B
 
-def pollard_rho(num: int) -> int:
+def pollard_rho(num: int, max_c: int = 10, max_iters: int = 10 ** 6) -> int:
     # won't work if num is prime
     # instead it will enter an infinite loop (fix needed)
     if num % 2 == 0:
         return 2
-    while True:
-        c = 1
+    c = 1
+    while c <= max_c:
         x0 = 2
         def apply_polinomial(x: int):
             return (x ** 2 + c) % num
         # sets tortoise and hare pointers
+        iters = 0
         T = H = x0
-        while True:
+        while iters <= max_iters:
             # execute the iteration
             T = apply_polinomial(T)
             H = apply_polinomial(apply_polinomial(H))
@@ -122,7 +123,9 @@ def pollard_rho(num: int) -> int:
                 return gcd
             if gcd == num:
                 break
+            iters += 1
         c += 1
+    raise tlee("No factor was found within set iteration limit")
 
 def generate_N_primes(N: int) -> list[int]:
     primes = [2]
@@ -247,17 +250,10 @@ def quadratic_sieve(num: int) -> int:
         g = euclidean_gcd_algorithm(X - Y, num)
         if g == 1 or abs(g) == num: continue
         return int(g)
-
+    
 if __name__ == '__main__':
-    import sys
     num = -1
     try:
-        num = 1649
-        # num = 457892576
-        # num = 17589302458768765432134567897654321343453246534543423
-        print(miller_rabin_primality(num))
-        val = quadratic_sieve(num)
-        print(val)
-        print(num // val)
+        print("Hello World!")
     except ValueError as e:
         print(f"Error: {e.args[0]}")
