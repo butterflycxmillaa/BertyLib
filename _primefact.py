@@ -85,6 +85,8 @@ def miller_rabin_primality(num: int) -> bool:
     return False
 
 def euclidean_gcd_algorithm(A: int, B: int) -> int:
+    A = abs(A)
+    B = abs(B)
     # swap A and B so that A >= B
     if A == 0:
         return B
@@ -243,7 +245,7 @@ def quadratic_sieve(num: int) -> int:
         X %= num
         Y = math.sqrt(Y)
         g = euclidean_gcd_algorithm(X - Y, num)
-        if g == 1 or g == num: continue
+        if g == 1 or abs(g) == num: continue
         return int(g)
 
 if __name__ == '__main__':
@@ -253,8 +255,9 @@ if __name__ == '__main__':
         num = 1649
         # num = 457892576
         # num = 17589302458768765432134567897654321343453246534543423
+        print(miller_rabin_primality(num))
         val = quadratic_sieve(num)
         print(val)
-        print(num / val)
+        print(num // val)
     except ValueError as e:
         print(f"Error: {e.args[0]}")
