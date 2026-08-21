@@ -1,11 +1,12 @@
 import math
-from _bigint import big_exp_mod_N
-from _block_lanczos import find_row_dependencies
+import random
+
 from sortedcontainers import SortedDict
 
+from _block_lanczos import find_row_dependencies
 from _TimeLimitExceeded_exception import TimeLimitExceededError as tlee
 
-known_primes = []
+kp = []
 upper_lim = 0
 
 def sieve_of_eratosthenes(n: int) -> list[int]:
@@ -36,14 +37,14 @@ def segmented_soe(kp: list[int], L: int) -> list[int]:
     return [M + i for i in range(dim) if candidates[i]]
 
 def set_upper_lim_kp(lim: int) -> list[int]:
-    global known_primes, upper_lim
+    global kp, upper_lim
     if upper_lim == 0:
         sqrt_lim = int(math.isqrt(lim) + 1)
-        known_primes = sieve_of_eratosthenes(sqrt_lim)
-    expand_primes = segmented_soe(known_primes, lim)
-    known_primes += expand_primes
+        kp = sieve_of_eratosthenes(sqrt_lim)
+    expand_primes = segmented_soe(kp, lim)
+    kp += expand_primes
     upper_lim = lim
-    return known_primes
+    return kp
 
 kp = set_upper_lim_kp(1_000_000)
 
@@ -52,9 +53,9 @@ def find_known_factors(num: int) -> list[int]:
     res = list[int]()
     # defines the already explored known primes
     min_ind = 0
-    while num not in known_primes and num != 1 and min_ind < len(known_primes):
+    while num not in kp and num != 1 and min_ind < len(kp):
         # check if it's divisible by the first available prime
-        prime = known_primes[min_ind]
+        prime = kp[min_ind]
         result = (num // prime, num % prime)
         if result[1] == 0:
             # if num is divisible by prime, add prime to list and pick the result
@@ -63,45 +64,37 @@ def find_known_factors(num: int) -> list[int]:
         else:
             # num is not divisible by prime -> none of its divisors will be divisible by prime
             min_ind += 1
-    if num in known_primes:
+    if num in kp:
         res.append(num)
     return res
 
-def miller_rabin_primality(num: int) -> bool:
-    exp = num - 1
-    A = 100
-    final = big_exp_mod_N(A, exp, num)
-    if final == 1:
-        while exp % 2 == 0:
-            exp //= 2
-            # perform the big exp calculation once again
-            new = big_exp_mod_N(A, exp, num)
-            if final == 1:
-                if new == 1 or new == num - 1:
-                    final = new
-                    continue
-                return False
-        return True
-    return False
+def miller_rabin_primality(num: int, k: int = 10) -> bool:
+    if num < 0: num = -num
+    if num < 2: return False
+    if num in (2, 3): return True
+    if num % 2 == 0: return False
 
-def euclidean_gcd_algorithm(A: int, B: int) -> int:
-    A = abs(A)
-    B = abs(B)
-    # swap A and B so that A >= B
-    if A == 0:
-        return B
-    if B == 0:
-        return A
-    if B > A:
-        A, B = B, A
-    result = (A // B, A % B)
-    while result[1] != 0:
-        A = B
-        B = result[1]
-        result = (A // B, A % B)
-    return B
+    d = num - 1
+    s = 0
+    while d % 2 == 0:
+        d //= 2
+        s += 1
+    for _ in range(k):
+        A = random.randint(2, num - 2)
+        final = pow(A, d, num)
+        if final == 1 or final == num - 1:
+            continue
+        composite = True
+        for _ in range(s - 1):
+            final = pow(final, 2, num)
+            if final == num - 1:
+                composite = False
+                break
+        if composite:
+            return False
+    return True
 
-def pollard_rho(num: int, max_c: int = 10, max_iters: int = 10 ** 6) -> int:
+def pollard_rho(num: int, max_c: int = 10, max_iters: int = 5 * (10 ** 4)) -> int:
     # won't work if num is prime
     # instead it will enter an infinite loop (fix needed)
     if num % 2 == 0:
@@ -118,7 +111,7 @@ def pollard_rho(num: int, max_c: int = 10, max_iters: int = 10 ** 6) -> int:
             # execute the iteration
             T = apply_polinomial(T)
             H = apply_polinomial(apply_polinomial(H))
-            gcd = euclidean_gcd_algorithm(abs(T - H), num)
+            gcd = math.gcd(abs(T - H), num)
             if 1 < gcd < num:
                 return gcd
             if gcd == num:
@@ -178,12 +171,12 @@ def legendre_symbol(num: int, p: int) -> bool:
     return p == 2 or pow(num, (p - 1) // 2, p) == 1
 
 def generate_factor_base(num: int, k: int, B: int):
-    global known_primes, upper_lim
+    global kp, upper_lim
 
     if upper_lim < B:
         set_upper_lim_kp(B)
     factor_base = []
-    for p in known_primes:
+    for p in kp:
         if len(factor_base) - 1 >= k:
             break
         if legendre_symbol(num, p):
@@ -192,8 +185,8 @@ def generate_factor_base(num: int, k: int, B: int):
     while len(factor_base) - 1 < k:
         current_lim *= 2
         set_upper_lim_kp(current_lim)
-        for p in known_primes:
-            if p <= known_primes[len(factor_base) - 1]:
+        for p in kp:
+            if p <= kp[len(factor_base) - 1]:
                 continue
             if len(factor_base) - 1 >= k:
                 break
@@ -247,14 +240,16 @@ def quadratic_sieve(num: int) -> int:
             Y *= qx_arr[elem]
         X %= num
         Y = math.isqrt(Y)
-        g = euclidean_gcd_algorithm(X - Y, num)
+        g = math.gcd(X - Y, num)
         if g == 1 or g == num: continue
         return int(g)
     return 1
 
 def factorize_num_aux(num: int, factors: list[int]) -> None:
-    global upper_lim
+    global kp, upper_lim
 
+    if num == 1:
+        return
     if miller_rabin_primality(num):
         factors.append(num)
         return
@@ -266,11 +261,13 @@ def factorize_num_aux(num: int, factors: list[int]) -> None:
     try:
         g = pollard_rho(num)
     except tlee:
+        print("Time limit exceeded. Resorting to quadratic sieve...")
         g = quadratic_sieve(num) 
     finally:
         # g is a factor of num, so factorize both g and num // g
         factorize_num_aux(g, factors)
-        factorize_num_aux(num // g, factors)
+        if g != 1:
+            factorize_num_aux(num // g, factors)
     return
 
 def factorize_num(num: int) -> SortedDict[int, int]:
@@ -285,8 +282,6 @@ def factorize_num(num: int) -> SortedDict[int, int]:
         num *= -1
     elif num > 0:
         res[-1] = 0
-    if num == 1:
-        return res
     factors = []
     factorize_num_aux(num, factors)
     for f in factors:
@@ -298,12 +293,26 @@ def factorize_num(num: int) -> SortedDict[int, int]:
 if __name__ == '__main__':
     num = -1
     try:
-        num = 465782945632
-        res = factorize_num(num)
-        print(f"{num} =", end = " ")
-        for idx, fact in enumerate(res.keys()):
-            if fact > 0:
-                print(f"({fact} ^ {res[fact]}){' *' if fact != res.keys()[-1] else ''}", end = " ")
-        print()
+        iters = 0
+        found = False
+        while not found:
+            digits = 20
+            num = ""
+            new_d = random.randint(1, 9)
+            num += str(new_d)
+            for d in range(digits - 1):
+                new_d = random.randint(0, 9)
+                num += str(new_d)
+            num = int(num)
+            print(num)
+            res = factorize_num(num)
+            for fact in res.keys()[2:]:
+                prime = miller_rabin_primality(fact)
+                if not prime:
+                    print(f"Found exception after {iters} iterations: {fact}")
+                    found = True
+                    break
+                else:
+                    iters += 1
     except ValueError as e:
         print(f"Error: {e.args[0]}")
